@@ -5,7 +5,8 @@ mod:SetRevision(("$Revision: 4409 $"):sub(12, -3))
 mod:SetCreatureID(36612)
 mod:SetUsedIcons(1, 2, 3, 4, 5, 6, 7, 8)
 
-mod:RegisterCombat("combat")
+--mod:RegisterCombat("combat")
+mod:RegisterCombat("yell", L.YellPull)
 
 mod:RegisterEvents(
 	"SPELL_AURA_APPLIED",
@@ -22,9 +23,9 @@ local warnImpale			= mod:NewAnnounce("WarnImpale", 4, 72669)
 local specWarnColdflame		= mod:NewSpecialWarningMove(70825)
 local specWarnWhirlwind		= mod:NewSpecialWarningRun(69076)
 
-local timerBoneSpike		= mod:NewCDTimer(18, 69057)
-local timerWhirlwindCD		= mod:NewCDTimer(90, 69076)
-local timerWhirlwind		= mod:NewBuffActiveTimer(20, 69076)
+local timerBoneSpike		= mod:NewCDTimer(15, 69057) -- 10-15 sec. ; every next 15-20 sec.
+local timerWhirlwindCD		= mod:NewCDTimer(90, 69076) -- 45-50 sec. ; every next 90-95 sec.
+local timerWhirlwind		= mod:NewBuffActiveTimer(30, 69076)
 local timerBoned			= mod:NewAchievementTimer(8, 4610, "AchievementBoned")
 
 local berserkTimer			= mod:NewBerserkTimer(600)
@@ -44,7 +45,7 @@ end
 function mod:OnCombatStart(delay)
 	preWarnWhirlwind:Schedule(40-delay)
 	timerWhirlwindCD:Start(45-delay)
-	timerBoneSpike:Start(15-delay)
+	timerBoneSpike:Start(10-delay)
 	berserkTimer:Start(-delay)
 	table.wipe(impaleTargets)
 end
@@ -54,11 +55,15 @@ function mod:SPELL_AURA_APPLIED(args)
 		specWarnWhirlwind:Show()
 		timerWhirlwindCD:Start()
 		preWarnWhirlwind:Schedule(85)
-		if mod:IsDifficulty("heroic10") or mod:IsDifficulty("heroic25") then
-			timerWhirlwind:Show(30)						-- Approx 30seconds on heroic
-		else
-			timerWhirlwind:Show()						-- Approx 20seconds on normal.
-			timerBoneSpike:Cancel()						-- He doesn't do Bone Spike Graveyard during Bone Storm on normal
+		--if mod:IsDifficulty("heroic10") or mod:IsDifficulty("heroic25") then
+		--	timerWhirlwind:Show(30)						-- Approx 30seconds on heroic
+		--else
+		--	timerWhirlwind:Show()						-- Approx 20seconds on normal.
+		--	timerBoneSpike:Cancel()						-- He doesn't do Bone Spike Graveyard during Bone Storm on normal
+		--end
+		timerWhirlwind:Show()
+		if mod:IsDifficulty("normal10") or mod:IsDifficulty("normal25") then
+			timerBoneSpike:Cancel()
 		end
 		soundWhirlwind:Play()
 	end

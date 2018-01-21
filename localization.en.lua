@@ -117,6 +117,9 @@ L:SetOptionLocalization{
 	AchievementBoned	= "Show timer for Boned achievement",
 	SetIconOnImpale		= DBM_CORE_AUTO_ICONS_OPTION_TEXT:format(69062)
 }
+L:SetMiscLocalization{
+	YellPull			= "The Scourge will wash over this world as a swarm of death and destruction!"
+}
 
 -------------------------
 --  Lady Deathwhisper  --
