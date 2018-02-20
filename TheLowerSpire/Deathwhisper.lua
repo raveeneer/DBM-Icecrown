@@ -1,3 +1,4 @@
+-- 2018-02-05 19:11:03
 local mod	= DBM:NewMod("Deathwhisper", "DBM-Icecrown", 1)
 local L		= mod:GetLocalizedStrings()
 
@@ -6,11 +7,13 @@ mod:SetCreatureID(36855)
 mod:SetUsedIcons(4, 5, 6, 7, 8)
 mod:RegisterCombat("yell", L.YellPull)
 
+
 mod:RegisterEvents(
 	"SPELL_AURA_APPLIED",
 	"SPELL_AURA_APPLIED_DOSE",
 	"SPELL_AURA_REMOVED",
 	"SPELL_CAST_START",
+	"SPELL_CAST_SUCCESS",
 	"SPELL_INTERRUPT",
 	"SPELL_SUMMON",
 	"SWING_DAMAGE",
@@ -31,6 +34,7 @@ local warnDarkTransformation		= mod:NewSpellAnnounce(70900, 4)
 local warnDarkEmpowerment			= mod:NewSpellAnnounce(70901, 4)
 local warnPhase2					= mod:NewPhaseAnnounce(2, 1)	
 local warnFrostbolt					= mod:NewCastAnnounce(72007, 2)
+local warnFrostboltVolley			= mod:NewSpellAnnounce(70759, 4)
 local warnTouchInsignificance		= mod:NewAnnounce("WarnTouchInsignificance", 2, 71204, mod:IsTank() or mod:IsHealer())
 local warnDarkMartyrdom				= mod:NewSpellAnnounce(72499, 4)
 
@@ -42,19 +46,28 @@ local specWarnDarkMartyrdom			= mod:NewSpecialWarningMove(72499, mod:IsMelee())
 local specWarnFrostbolt				= mod:NewSpecialWarningInterupt(72007, false)
 local specWarnVengefulShade			= mod:NewSpecialWarning("SpecWarnVengefulShade", not mod:IsTank())
 
-local timerAdds						= mod:NewTimer(60, "TimerAdds", 61131)
+local timerAdds						= mod:NewTimer(60, "TimerAdds", 61131) 	-- 5s / 45s hc, 60s norm
 local timerDominateMind				= mod:NewBuffActiveTimer(12, 71289)
-local timerDominateMindCD			= mod:NewCDTimer(40, 71289)
-local timerSummonSpiritCD			= mod:NewCDTimer(10, 71426, nil, false)
-local timerFrostboltCast			= mod:NewCastTimer(4, 72007)
-local timerTouchInsignificance		= mod:NewTargetTimer(30, 71204, nil, mod:IsTank() or mod:IsHealer())
+local timerDominateMindCD			= mod:NewCDTimer(40, 71289) 			-- 40-50s
+local timerSummonSpiritCD			= mod:NewCDTimer(12, 71426, nil, false) -- 12s
+local timerFrostboltCast			= mod:NewCastTimer(2, 72007)
+local timerFrostboltVolleyCD		= mod:NewCDTimer(13, 70759) 			-- 19-20s / 13-15s
+local timerTouchInsignificance		= mod:NewTargetTimer(10, 71204, nil, mod:IsTank() or mod:IsHealer()) -- 6-9s / 9-13s
+local timerDeathDecay				= mod:NewCDTimer(22, 72108) 			-- 10s / 22-30s
 
 local berserkTimer					= mod:NewBerserkTimer(600)
+
+local soundAA1 = "Interface\\AddOns\\DBM-Core\\sounds\\aa1.mp3"
+local soundAA2 = "Interface\\AddOns\\DBM-Core\\sounds\\aa2.mp3"
+local soundAA3 = "Interface\\AddOns\\DBM-Core\\sounds\\aa3.mp3"
+local soundAA4 = "Interface\\AddOns\\DBM-Core\\sounds\\aa4.mp3"
+local soundSpirits = "Sound\\Creature\\AlgalonTheObserver\\UR_Algalon_BHole01.wav"
 
 mod:AddBoolOption("SetIconOnDominateMind", true)
 mod:AddBoolOption("SetIconOnDeformedFanatic", true)
 mod:AddBoolOption("SetIconOnEmpoweredAdherent", false)
 mod:AddBoolOption("ShieldHealthFrame", true, "misc")
+mod:AddBoolOption("PlaySoundBloopers", true)
 mod:RemoveOption("HealthFrame")
 
 
@@ -71,11 +84,12 @@ function mod:OnCombatStart(delay)
 		self:ScheduleMethod(0.5, "CreateShildHPFrame")
 	end		
 	berserkTimer:Start(-delay)
-	timerAdds:Start(7)
-	warnAddsSoon:Schedule(4)			-- 3sec pre-warning on start
-	self:ScheduleMethod(7, "addsTimer")
+	timerDeathDecay:Start(10)
+	timerAdds:Start(5)
+	warnAddsSoon:Schedule(2)			-- 3sec pre-warning on start
+	self:ScheduleMethod(5, "addsTimer")
 	if not mod:IsDifficulty("normal10") then
-		timerDominateMindCD:Start(30)		-- Sometimes 1 fails at the start, then the next will be applied 70 secs after start ?? :S
+		timerDominateMindCD:Start(27)		-- Sometimes 1 fails at the start, then the next will be applied 70 secs after start ?? :S
 	end
 	table.wipe(dominateMindTargets)
 	dominateMindIcon = 6
@@ -170,6 +184,7 @@ do
 			if (GetTime() - lastDD > 5) then
 				warnDeathDecay:Show()
 				lastDD = GetTime()
+				timerDeathDecay:Start()
 			end
 		elseif args:IsSpellID(71237) and args:IsPlayer() then
 			specWarnCurseTorpor:Show()
@@ -215,9 +230,28 @@ function mod:SPELL_CAST_START(args)
 			empoweredAdherent = args.sourceGUID
 			self:TrySetTarget()
 		end
-	elseif args:IsSpellID(72499, 72500, 72497, 72496) then
+	elseif args:IsSpellID(70903, 71236, 72499, 72496, 72498, 72495, 72500, 72497) then
 		warnDarkMartyrdom:Show()
 		specWarnDarkMartyrdom:Show()
+		randomNumber = math.random(1,4)
+		if self.Options.PlaySoundBloopers then
+			if randomNumber == 1 then
+				PlaySoundFile(soundAA1, "Master")
+			elseif randomNumber == 2 then
+				PlaySoundFile(soundAA2, "Master")
+			elseif randomNumber == 3 then
+				PlaySoundFile(soundAA3, "Master")
+			else
+				PlaySoundFile(soundAA4, "Master")	
+			end
+		end
+	end
+end
+
+function mod:SPELL_CAST_SUCCESS(args)
+	if args:IsSpellID(72905, 72906, 72907, 72908) then
+		warnFrostboltVolley:Show()
+		timerFrostboltVolleyCD:Start()
 	end
 end
 
@@ -235,6 +269,7 @@ function mod:SPELL_SUMMON(args)
 			timerSummonSpiritCD:Start()
 			lastSpirit = time()
 		end
+		PlaySoundFile(soundSpirits, "Master")
 	end
 end
 
@@ -253,5 +288,17 @@ end
 function mod:CHAT_MSG_MONSTER_YELL(msg)
 	if msg == L.YellReanimatedFanatic or msg:find(L.YellReanimatedFanatic) then
 		warnReanimating:Show()
+	elseif msg == L.YellPhase2 or msg:find(L.YellPhase2) then
+		timerSummonSpiritCD:Start()
+		if mod:IsDifficulty("heroic10") or mod:IsDifficulty("heroic25") then
+			timerAdds:Cancel()
+			warnAddsSoon:Cancel()
+			self:Unschedule(addsTimer)
+			warnAddsSoon:Schedule(40)	-- 5 secs prewarning
+			timerAdds:Start(45)
+			self:ScheduleMethod(45, "addsTimer")
+		end
+		timerFrostboltVolleyCD:Start(19)
 	end
+
 end

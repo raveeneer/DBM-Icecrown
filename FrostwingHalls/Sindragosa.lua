@@ -1,4 +1,5 @@
-﻿local mod	= DBM:NewMod("Sindragosa", "DBM-Icecrown", 4)
+﻿-- 2018-02-15 22:02:23
+local mod	= DBM:NewMod("Sindragosa", "DBM-Icecrown", 4)
 local L		= mod:GetLocalizedStrings()
 
 mod:SetRevision(("$Revision: 4438 $"):sub(12, -3))
@@ -38,9 +39,10 @@ local specWarnBlisteringCold	= mod:NewSpecialWarningRun(70123)
 
 local timerNextAirphase			= mod:NewTimer(110, "TimerNextAirphase", 43810)
 local timerNextGroundphase		= mod:NewTimer(45, "TimerNextGroundphase", 43810)
-local timerNextFrostBreath		= mod:NewNextTimer(22, 71056, nil, mod:IsTank() or mod:IsHealer())
-local timerNextBlisteringCold	= mod:NewCDTimer(67, 70123)
-local timerNextBeacon			= mod:NewNextTimer(16, 70126)
+local timerFrostBreathCD		= mod:NewCDTimer(7, 71056, nil, mod:IsTank() or mod:IsHealer()) -- 8-12s / 20-25s / 7-10s  
+local timerNextBlisteringCold	= mod:NewCDTimer(35, 70123) 				-- 33.5s / (landed) 35-40s / third phase first 35-40s next 65-70s
+local timerBeaconCD				= mod:NewCDTimer(18, 70126) 				-- 7-10s / 18-22s
+local timerUnchainedMagicCD		= mod:NewCDTimer(12, 69762) 				-- 9-14s / 30-35s / 12-17s  
 local timerBlisteringCold		= mod:NewCastTimer(6, 70123)
 local timerUnchainedMagic		= mod:NewBuffActiveTimer(30, 69762)
 local timerInstability			= mod:NewBuffActiveTimer(5, 69766)
@@ -48,6 +50,8 @@ local timerChilledtotheBone		= mod:NewBuffActiveTimer(8, 70106)
 local timerMysticBuffet			= mod:NewBuffActiveTimer(8, 70128)
 local timerNextMysticBuffet		= mod:NewNextTimer(6, 70128)
 local timerMysticAchieve		= mod:NewAchievementTimer(30, 4620, "AchievementMystic")
+local timerCleaveCD				= mod:NewCDTimer(13, 19983) 				-- 10s / 10-15s / (landed) 13-15s 
+local timerTailSmashCD			= mod:NewCDTimer(19, 71077) 				-- 20s / 22-27s / 19-23s  
 
 local berserkTimer				= mod:NewBerserkTimer(600)
 
@@ -67,6 +71,7 @@ local warnedfailed = false
 local phase = 0
 local unchainedIcons = 7
 local activeBeacons	= false
+local timeBeacon
 
 do
 	local function sort_by_group(v1, v2)
@@ -96,6 +101,7 @@ end
 local function warnUnchainedTargets()
 	warnUnchainedMagic:Show(table.concat(unchainedTargets, "<, >"))
 	timerUnchainedMagic:Start()
+	timerUnchainedMagicCD:Start(30)
 	table.wipe(unchainedTargets)
 	unchainedIcons = 7
 end
@@ -103,7 +109,11 @@ end
 function mod:OnCombatStart(delay)
 	berserkTimer:Start(-delay)
 	timerNextAirphase:Start(50-delay)
-	timerNextBlisteringCold:Start(33-delay)
+	timerNextBlisteringCold:Start(33.5-delay)
+	timerCleaveCD:Start(10-delay)
+	timerTailSmashCD:Start(20-delay)
+	timerFrostBreathCD:Start(8-delay)
+	timerUnchainedMagicCD:Start(9-delay)
 	warned_P2 = false
 	warnedfailed = false
 	table.wipe(beaconTargets)
@@ -130,7 +140,9 @@ end
 function mod:SPELL_CAST_START(args)
 	if args:IsSpellID(69649, 71056, 71057, 71058) or args:IsSpellID(73061, 73062, 73063, 73064) then--Frost Breath
 		warnFrostBreath:Show()
-		timerNextFrostBreath:Start()
+		timerFrostBreathCD:Start(20)
+	elseif args:IsSpellID(71077) then 
+		timerTailSmashCD:Start(22)
 	end
 end	
 
@@ -147,7 +159,7 @@ function mod:SPELL_AURA_APPLIED(args)
 			end
 		end
 		if phase == 2 then--Phase 2 there is only one icon/beacon, don't use sorting method if we don't have to.
-			timerNextBeacon:Start()
+			timerBeaconCD:Start()
 			if self.Options.SetIconOnFrostBeacon then
 				self:SetIcon(args.destName, 8)
 				if self.Options.AnnounceFrostBeaconIcons then
@@ -224,8 +236,18 @@ function mod:SPELL_CAST_SUCCESS(args)
 		warnBlisteringCold:Show()
 		specWarnBlisteringCold:Show()
 		timerBlisteringCold:Start()
-		timerNextBlisteringCold:Start()
+		if phase == 2 then
+			timeBeacon = 18 - timerBeaconCD:GetTime()
+			if timeBeacon < 7 then
+				timerBeaconCD:Start(7)
+			end
+			timerNextBlisteringCold:Start(65)
+		else
+			timerBlisteringCold:Start()
+		end
 		soundBlisteringCold:Play()
+	elseif args:IsSpellID(19983) then
+		timerCleaveCD:Start(10)
 	end
 end	
 
@@ -265,20 +287,28 @@ function mod:CHAT_MSG_MONSTER_YELL(msg)
 			self:ClearIcons()
 		end
 		warnAirphase:Show()
-		timerNextFrostBreath:Cancel()
-		timerUnchainedMagic:Start(55)
-		timerNextBlisteringCold:Start(80)--Not exact anywhere from 80-110seconds after airphase begin
+		timerFrostBreathCD:Cancel()
+		timerUnchainedMagic:Cancel()
+		timerNextBlisteringCold:Cancel()
+		timerNextAirphase:Cancel()
+		timerCleaveCD:Cancel()
+		timerTailSmashCD:Cancel()
+		warnGroundphaseSoon:Schedule(33.5)
+		timerNextGroundphase:Start(36.5)
 		timerNextAirphase:Start()
-		timerNextGroundphase:Start()
-		warnGroundphaseSoon:Schedule(40)
+		timerCleaveCD:Schedule(38.5)
+		timerTailSmashCD:Schedule(38.5)
+		timerFrostBreathCD:Schedule(38.5)
+		timerUnchainedMagicCD:Schedule(38.5)
+		timerNextBlisteringCold:Schedule(38.5)
 		activeBeacons = true
 	elseif (msg == L.YellPhase2 or msg:find(L.YellPhase2)) or (msg == L.YellPhase2Dem or msg:find(L.YellPhase2Dem)) then
 		phase = phase + 1
 		warnPhase2:Show()
-		timerNextBeacon:Start(7)
 		timerNextAirphase:Cancel()
 		timerNextGroundphase:Cancel()
 		warnGroundphaseSoon:Cancel()
+		timerBeaconCD:Start(7)
 		timerNextBlisteringCold:Start(35)
 	end
 end

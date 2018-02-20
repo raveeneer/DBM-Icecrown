@@ -1,3 +1,4 @@
+-- 2018-02-05 19:07:24
 local mod	= DBM:NewMod("LordMarrowgar", "DBM-Icecrown", 1)
 local L		= mod:GetLocalizedStrings()
 
@@ -5,7 +6,6 @@ mod:SetRevision(("$Revision: 4409 $"):sub(12, -3))
 mod:SetCreatureID(36612)
 mod:SetUsedIcons(1, 2, 3, 4, 5, 6, 7, 8)
 
---mod:RegisterCombat("combat")
 mod:RegisterCombat("yell", L.YellPull)
 
 mod:RegisterEvents(
@@ -23,9 +23,9 @@ local warnImpale			= mod:NewAnnounce("WarnImpale", 4, 72669)
 local specWarnColdflame		= mod:NewSpecialWarningMove(70825)
 local specWarnWhirlwind		= mod:NewSpecialWarningRun(69076)
 
-local timerBoneSpike		= mod:NewCDTimer(15, 69057) -- 10-15 sec. ; every next 15-20 sec.
-local timerWhirlwindCD		= mod:NewCDTimer(90, 69076) -- 45-50 sec. ; every next 90-95 sec.
-local timerWhirlwind		= mod:NewBuffActiveTimer(30, 69076)
+local timerBoneSpike		= mod:NewCDTimer(15, 69057) -- 10-15s / 15-20s
+local timerWhirlwindCD		= mod:NewCDTimer(90, 69076) -- 45-50s / 90-95s
+local timerWhirlwind		= mod:NewBuffActiveTimer(31, 69076)
 local timerBoned			= mod:NewAchievementTimer(8, 4610, "AchievementBoned")
 
 local berserkTimer			= mod:NewBerserkTimer(600)
@@ -76,7 +76,7 @@ function mod:SPELL_AURA_REMOVED(args)
 		end
 	elseif args:IsSpellID(69076) then
 		if mod:IsDifficulty("normal10") or mod:IsDifficulty("normal25") then
-			timerBoneSpike:Start(15)			-- He will do Bone Spike Graveyard 15 seconds after whirlwind ends on normal
+			timerBoneSpike:Start(15)			-- He will do Bone Spike Graveyard 15-20 seconds after whirlwind ends on normal
 		end
 	end
 end
@@ -110,7 +110,7 @@ function mod:SPELL_SUMMON(args)
 		if mod:IsDifficulty("normal10") or (mod:IsDifficulty("normal25") and #impaleTargets >= 3) then
 			showImpaleWarning()
 		else
-			self:Schedule(0.3, showImpaleWarning)
+			self:Schedule(0.1, showImpaleWarning)
 		end
 	end
 end

@@ -1,9 +1,10 @@
+-- 2018-02-05 20:55:39
 local mod	= DBM:NewMod("Deathbringer", "DBM-Icecrown", 1)
 local L		= mod:GetLocalizedStrings()
 
 mod:SetRevision(("$Revision: 4408 $"):sub(12, -3))
 mod:SetCreatureID(37813)
-mod:RegisterCombat("combat")
+mod:RegisterCombat("yell", L.YellPull)
 mod:SetUsedIcons(1, 2, 3, 4, 5, 6, 7, 8)
 
 mod:RegisterEvents(
@@ -24,15 +25,16 @@ local warnBloodNova			= mod:NewSpellAnnounce(73058, 2)
 local warnMark				= mod:NewTargetAnnounce(72444, 4)
 local warnBoilingBlood		= mod:NewTargetAnnounce(72441, 2, nil, mod:IsHealer())
 local warnRuneofBlood		= mod:NewTargetAnnounce(72410, 3, nil, mod:IsTank() or mod:IsHealer())
+local warnScentofBlood		= mod:NewSpellAnnounce(72769, 2)
 
 local specwarnMark			= mod:NewSpecialWarningTarget(72444, false)
 local specwarnRuneofBlood	= mod:NewSpecialWarningTarget(72410, mod:IsTank())
 
-local timerCombatStart		= mod:NewTimer(48, "TimerCombatStart", 2457)
-local timerRuneofBlood		= mod:NewNextTimer(20, 72410, nil, mod:IsTank() or mod:IsHealer())
-local timerBoilingBlood		= mod:NewNextTimer(15.5, 72441)
-local timerBloodNova		= mod:NewNextTimer(20, 73058)
-local timerCallBloodBeast	= mod:NewNextTimer(40, 72173)
+local timerCombatStart		= mod:NewTimer(47, "TimerCombatStart", 2457)
+local timerRuneofBlood		= mod:NewCDTimer(20, 72410, nil, mod:IsTank() or mod:IsHealer()) -- 20-25s
+local timerBoilingBlood		= mod:NewCDTimer(15, 72441) -- 15-20s
+local timerBloodNova		= mod:NewCDTimer(20, 73058) -- 20-25s
+local timerCallBloodBeast	= mod:NewNextTimer(40, 72173) -- 40s
 
 local enrageTimer			= mod:NewBerserkTimer(480)
 
@@ -64,11 +66,11 @@ function mod:OnCombatStart(delay)
 	else
 		enrageTimer:Start(360-delay)
 	end
-	timerCallBloodBeast:Start(-delay)
-	warnAddsSoon:Schedule(30-delay)
-	timerBloodNova:Start(-delay)
+	warnAddsSoon:Schedule(20-delay)
+	timerCallBloodBeast:Start(30-delay)
+	timerBloodNova:Start(17-delay)
 	timerRuneofBlood:Start(-delay)
-	timerBoilingBlood:Start(19-delay)
+	timerBoilingBlood:Start(15.5-delay)
 	table.wipe(boilingBloodTargets)
 	warned_preFrenzy = false
 	boilingBloodIcon = 8
@@ -119,6 +121,8 @@ function mod:SPELL_CAST_SUCCESS(args)
 		warnRuneofBlood:Show(args.destName)
 		specwarnRuneofBlood:Show(args.destName)
 		timerRuneofBlood:Start()
+	elseif args:IsSpellID(72769, 72771) then
+		warnScentofBlood:Show()
 	end
 end
 
@@ -205,6 +209,6 @@ function mod:CHAT_MSG_MONSTER_YELL(msg)
 	if msg:find(L.PullAlliance, 1, true) then
 		timerCombatStart:Start()
 	elseif msg:find(L.PullHorde, 1, true) then
-		timerCombatStart:Start(99)
+		timerCombatStart:Start(81)
 	end
 end

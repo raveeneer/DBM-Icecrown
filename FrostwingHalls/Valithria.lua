@@ -28,9 +28,10 @@ local warnPortalOpen	= mod:NewAnnounce("WarnPortalOpen", 4, 72483)
 
 local specWarnLayWaste	= mod:NewSpecialWarningSpell(71730)
 local specWarnManaVoid	= mod:NewSpecialWarningMove(71741)
+local specWarnBlazingSkeleton = mod:NewSpecialWarning("WarnBlazingSkeleton")
 
 local timerLayWaste		= mod:NewBuffActiveTimer(12, 69325)
-local timerNextPortal	= mod:NewCDTimer(46.5, 72483, nil)
+local timerPortalCD		= mod:NewCDTimer(45, 72483, nil) -- 45-48s / 45-48s 
 local timerPortalsOpen	= mod:NewTimer(10, "TimerPortalsOpen", 72483)
 local timerHealerBuff	= mod:NewBuffActiveTimer(40, 70873)
 local timerGutSpray		= mod:NewTargetTimer(12, 71283, nil, mod:IsTank() or mod:IsHealer())
@@ -76,15 +77,16 @@ function mod:OnCombatStart(delay)
 	if mod:IsDifficulty("heroic10") or mod:IsDifficulty("heroic25") then
 		berserkTimer:Start(-delay)
 	end
-	timerNextPortal:Start()
-	warnPortalSoon:Schedule(41)
-	self:ScheduleMethod(46.5, "Portals")--This will never be perfect, since it's never same. 45-48sec variations
+	timerPortalCD:Start()
+	warnPortalSoon:Schedule(40)
+	self:ScheduleMethod(45, "Portals")--This will never be perfect, since it's never same. 45-48sec variations
 	BlazingSkeletonTimer = 60
 	AbomTimer = 60
 	self:ScheduleMethod(50-delay, "StartBlazingSkeletonTimer")
 	self:ScheduleMethod(23-delay, "StartAbomTimer")
-	timerBlazingSkeleton:Start(-delay)
-	timerAbom:Start(23-delay)
+	timerBlazingSkeleton:Start(30-delay)
+	specWarnBlazingSkeleton:Schedule(30-delay)
+	timerAbom:Start(5-delay)
 	table.wipe(GutSprayTargets)
 	blazingSkeleton = nil
 end
@@ -96,10 +98,10 @@ function mod:Portals()
 	warnPortalSoon:Cancel()
 	warnPortalOpen:Schedule(15)
 	timerPortalsOpen:Schedule(15)
-	warnPortalSoon:Schedule(41)
-	timerNextPortal:Start()
+	warnPortalSoon:Schedule(40)
+	timerPortalCD:Start()
 	self:UnscheduleMethod("Portals")
-	self:ScheduleMethod(46.5, "Portals")--This will never be perfect, since it's never same. 45-48sec variations
+	self:ScheduleMethod(45, "Portals")--This will never be perfect, since it's never same. 45-48sec variations
 end
 
 function mod:TrySetTarget()

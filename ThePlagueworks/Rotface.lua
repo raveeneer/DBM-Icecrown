@@ -1,10 +1,12 @@
+--2018-02-09 13:46:21
 local mod	= DBM:NewMod("Rotface", "DBM-Icecrown", 2)
 local L		= mod:GetLocalizedStrings()
 
 mod:SetRevision(("$Revision: 4408 $"):sub(12, -3))
 mod:SetCreatureID(36627)
 mod:SetUsedIcons(7, 8)
-mod:RegisterCombat("combat")
+--mod:RegisterCombat("combat")
+mod:RegisterCombat("yell", L.YellPull)
 
 mod:RegisterEvents(
 	"SPELL_CAST_START",
@@ -30,17 +32,18 @@ local warnVileGas				= mod:NewTargetAnnounce(72272, 3)
 local specWarnMutatedInfection	= mod:NewSpecialWarningYou(71224)
 local specWarnStickyOoze		= mod:NewSpecialWarningMove(69774)
 local specWarnOozeExplosion		= mod:NewSpecialWarningRun(69839)
-local specWarnSlimeSpray		= mod:NewSpecialWarningSpell(69508, false)--For people that need a bigger warning to move
+local specWarnSlimeSpray		= mod:NewSpecialWarningSpell(69508, false)
 local specWarnRadiatingOoze		= mod:NewSpecialWarningSpell(69760, not mod:IsTank())
 local specWarnLittleOoze		= mod:NewSpecialWarning("SpecWarnLittleOoze")
 local specWarnVileGas			= mod:NewSpecialWarningYou(72272)
 
-local timerStickyOoze			= mod:NewNextTimer(16, 69774, nil, mod:IsTank())
-local timerWallSlime			= mod:NewTimer(20, "NextPoisonSlimePipes", 69789)
-local timerSlimeSpray			= mod:NewNextTimer(21, 69508)
-local timerMutatedInfection		= mod:NewTargetTimer(12, 71224)
+local timerStickyOoze			= mod:NewNextTimer(20, 69774, nil, mod:IsTank())
+local timerWallSlime			= mod:NewTimer(25, "NextPoisonSlimePipes", 69789) -- 8s / 25s
+local timerSlimeSpray			= mod:NewNextTimer(20, 69508) -- 20s / 20s -- delay events 1s
+local timerMutatedInfectionTar	= mod:NewTargetTimer(12, 71224)
+local timerMutatedInfection 	= mod:NewNextTimer(14, 71224) -- 14s, 2s less every 90s until reach 6s
 local timerOozeExplosion		= mod:NewCastTimer(4, 69839)
-local timerVileGasCD			= mod:NewNextTimer(30, 72272)
+local timerVileGasCD			= mod:NewCDTimer(15, 72272) -- 15-20s / 15-20s
 
 local soundMutatedInfection		= mod:NewSound(71224)
 mod:AddBoolOption("RangeFrame", mod:IsRanged())
@@ -49,6 +52,7 @@ mod:AddBoolOption("TankArrow")
 
 local RFVileGasTargets	= {}
 local spamOoze = 0
+local mutatedInfection = 14
 
 local function warnRFVileGasTargets()
 	warnVileGas:Show(table.concat(RFVileGasTargets, "<, >"))
@@ -56,36 +60,34 @@ local function warnRFVileGasTargets()
 	timerVileGasCD:Start()
 end
 
+function mod:hastenInfection()
+	if mutatedInfection >= 8 then
+		mutatedInfection = mutatedInfection - 2
+	end
+	self:ScheduleMethod(90, "hastenInfection")
+end
+
+
 function mod:OnCombatStart(delay)
-	timerWallSlime:Start(25-delay)
-	self:ScheduleMethod(25-delay, "WallSlime")
+	timerWallSlime:Start(8-delay)
+	timerSlimeSpray:Start(-delay)
+	timerMutatedInfection:Start(-delay)
 	InfectionIcon = 8
 	spamOoze = 0
+	mutatedInfection = 14
 	if mod:IsDifficulty("heroic10") or mod:IsDifficulty("heroic25") then
-		timerVileGasCD:Start(22-delay)
+		timerVileGasCD:Start(-delay)
 		if self.Options.RangeFrame then
 			DBM.RangeCheck:Show(8)
 		end
 	end
+	timerMutatedInfection:Start()
+	self:ScheduleMethod(90, "hastenInfection")
 end
 
 function mod:OnCombatEnd()
 	if self.Options.RangeFrame then
 		DBM.RangeCheck:Hide()
-	end
-end
---this function seems rathor limited but not entirely hopeless. i imagine it only works if you or someone else targets the big ooze, but that pretty much means it's useless if kiter doesn't have dbm.
---[[function mod:SlimeTank()
-	local target = self:GetThreatTarget(36897)
-	if not target then return end
-	self:SendSync("OozeTank", target)
-end--]]
-
-function mod:WallSlime()
-	if self:IsInCombat() then
-		timerWallSlime:Start()
-		self:UnscheduleMethod("WallSlime")
-		self:ScheduleMethod(20, "WallSlime")
 	end
 end
 
@@ -94,8 +96,13 @@ function mod:SPELL_CAST_START(args)
 		timerSlimeSpray:Start()
 		warnSlimeSpray:Show()
 		specWarnSlimeSpray:Show()
+
+		timerWallSlime:AddTime(1)
+		timerMutatedInfection:AddTime(1)
+		timerVileGasCD:AddTime(1)
+
 	elseif args:IsSpellID(69774) then
-		timerStickyOoze:Start()
+		timerStickyOoze:Start(5)
 		warnStickyOoze:Show()
 	elseif args:IsSpellID(69839) then --Unstable Ooze Explosion (Big Ooze)
 		if GetTime() - spamOoze < 4 then --This will prevent spam but breaks if there are 2 oozes. GUID work is required
@@ -118,7 +125,8 @@ function mod:SPELL_AURA_APPLIED(args)
 		warnUnstableOoze:Show(args.spellName, args.destName, args.amount or 1)
 	elseif args:IsSpellID(69674, 71224, 73022, 73023) then
 		warnMutatedInfection:Show(args.destName)
-		timerMutatedInfection:Start(args.destName)
+		timerMutatedInfectionTar:Start(args.destName)
+		timerMutatedInfection:Start(mutatedInfection)
 		if args:IsPlayer() then
 			specWarnMutatedInfection:Show()
 			soundMutatedInfection:Play()
@@ -151,7 +159,7 @@ end
 
 function mod:SPELL_AURA_REMOVED(args)
 	if args:IsSpellID(69674, 71224, 73022, 73023) then
-		timerMutatedInfection:Cancel(args.destName)
+		timerMutatedInfectionTar:Cancel(args.destName)
 		warnOozeSpawn:Show()
 		if self.Options.InfectionIcon then
 			self:SetIcon(args.destName, 0)
@@ -187,16 +195,6 @@ end
 
 function mod:CHAT_MSG_MONSTER_YELL(msg)
 	if (msg == L.YellSlimePipes1 or msg:find(L.YellSlimePipes1)) or (msg == L.YellSlimePipes2 or msg:find(L.YellSlimePipes2)) then
-		self:WallSlime()
+		timerWallSlime:Start()
 	end
 end
-
---[[function mod:OnSync(msg, target)
-	if msg == "OozeTank" then
-		if target ~= UnitName("player") then
-			if self.Options.TankArrow then
-				DBM.Arrow:ShowRunTo(target, 0, 0)
-			end
-		end
-	end
-end--]]

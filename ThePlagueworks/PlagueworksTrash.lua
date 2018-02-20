@@ -1,3 +1,4 @@
+-- 2018-02-05 21:07:52
 local mod	= DBM:NewMod("PlagueworksTrash", "DBM-Icecrown", 2)
 local L		= mod:GetLocalizedStrings()
 
@@ -21,9 +22,9 @@ local specWarnMortalWound	= mod:NewSpecialWarningStack(71127, nil, 5)
 local specWarnTrap			= mod:NewSpecialWarning("SpecWarnTrap")
 local specWarnBlightBomb	= mod:NewSpecialWarningSpell(71088)
 
-local timerZombies		= mod:NewNextTimer(20, 71159)
+local timerZombies		= mod:NewCDTimer(20, 71159) -- 25-30s / 20-25s
 local timerMortalWound	= mod:NewTargetTimer(15, 71127)
-local timerDecimate		= mod:NewNextTimer(33, 71123)
+local timerDecimate		= mod:NewCDTimer(20, 71123) -- 20-25s / 20-25s
 local timerBlightBomb	= mod:NewCastTimer(5, 71088)
 
 mod:RemoveOption("HealthFrame")

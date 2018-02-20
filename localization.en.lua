@@ -105,7 +105,7 @@ L:SetGeneralLocalization{
 }
 
 L:SetTimerLocalization{
-	AchievementBoned	= "Time to free"
+	AchievementBoned	= "Boned Achiv"
 }
 
 L:SetWarningLocalization{
@@ -144,18 +144,20 @@ L:SetWarningLocalization{
 L:SetOptionLocalization{
 	WarnAddsSoon				= "Show pre-warning for adds spawning",
 	WarnReanimating				= "Show warning when an add is being revived",	-- Reanimated Adherent/Fanatic spawning
-	TimerAdds					= "Show timer for new adds",
+	TimerAdds					= "Show CD timer for new adds",
 	SpecWarnVengefulShade		= "Show special warning when you are attacked by Vengeful Shade",--creatureid 38222
 	ShieldHealthFrame			= "Show boss health with a health bar for $spell:70842",
 	WarnTouchInsignificance		= DBM_CORE_AUTO_ANNOUNCE_OPTIONS.spell:format(71204, GetSpellInfo(71204) or "unknown"),	
 	SetIconOnDominateMind		= DBM_CORE_AUTO_ICONS_OPTION_TEXT:format(71289),
 	SetIconOnDeformedFanatic	= DBM_CORE_AUTO_ICONS_OPTION_TEXT:format(70900),
-	SetIconOnEmpoweredAdherent	= DBM_CORE_AUTO_ICONS_OPTION_TEXT:format(70901)
+	SetIconOnEmpoweredAdherent	= DBM_CORE_AUTO_ICONS_OPTION_TEXT:format(70901),
+	PlaySoundBloopers			= "Play sound bloopers"
 }
 
 L:SetMiscLocalization{
-	YellPull				= "What is this disturbance? You dare trespass upon this hallowed ground? This shall be your final resting place!",
+	YellPull				= "What is this disturbance?! You dare trespass upon this hallowed ground? This shall be your final resting place.",
 	YellReanimatedFanatic	= "Arise, and exult in your pure form!",
+	YellPhase2  			= "Enough! I see I must take matters into my own hands!",
 	ShieldPercent			= "Mana Barrier",--Translate Spell id 70842
 	Fanatic1				= "Cult Fanatic",
 	Fanatic2				= "Deformed Fanatic",
@@ -226,7 +228,8 @@ L:SetOptionLocalization{
 L:SetMiscLocalization{
 	RunePower			= "Blood Power",
 	PullAlliance		= "For every Horde soldier that you killed -- for every Alliance dog that fell, the Lich King's armies grew. Even now the val'kyr work to raise your fallen as Scourge.",
-	PullHorde			= "Kor'kron, move out! Champions, watch your backs. The Scourge have been..."
+	PullHorde			= "Kor'kron, move out! Champions, watch your backs. The Scourge have been...",
+	YellPull			= "BY THE MIGHT OF THE LICH KING!"
 }
 
 -----------------
@@ -254,7 +257,8 @@ L:SetOptionLocalization{
 
 L:SetMiscLocalization{
 	SporeSet	= "Gas Spore icon {rt%d} set on %s",
-	AchievementFailed	= ">> ACHIEVEMENT FAILED: %s has %d stacks of Inoculated <<"
+	AchievementFailed	= ">> ACHIEVEMENT FAILED: %s has %d stacks of Inoculated <<",
+	YellPull			= "Fun time!"
 }
 
 ---------------
@@ -288,7 +292,8 @@ L:SetOptionLocalization{
 
 L:SetMiscLocalization{
 	YellSlimePipes1	= "Good news, everyone! I've fixed the poison slime pipes!",	-- Professor Putricide
-	YellSlimePipes2	= "Great news, everyone! The slime is flowing again!"	-- Professor Putricide
+	YellSlimePipes2	= "Great news, everyone! The slime is flowing again!",	-- Professor Putricide
+	YellPull = "WEEEEEE!"
 }
 
 ---------------------------
@@ -304,35 +309,41 @@ L:SetWarningLocalization{
 	WarnPhase2Soon				= "Phase 2 soon",
 	WarnPhase3Soon				= "Phase 3 soon",
 	WarnMutatedPlague			= "%s on >%s< (%d)",	-- Mutated Plague on >args.destName< (args.amount)
-	SpecWarnMalleableGoo		= "Malleable Goo on you - Move away",
-	SpecWarnMalleableGooNear	= "Malleable Goo near you - Watch out",
 	SpecWarnUnboundPlague		= "Drop off the Unbound Plague",
-	SpecWarnNextPlageSelf		= "Unbound Plage to you next, get prepared!"
+	SpecWarnNextPlageSelf		= "Unbound Plage to you next, get prepared!",
+	WarnUnboundPlageSoon		= "Unbound Plague in 10 sec.",
+	WarnUnstableExperimentG		= "GREEN OOZE incoming",
+	WarnUnstableExperimentO		= "ORANGE OOZE incoming"
+}
+
+L:SetTimerLocalization{
+	Phase2						= "Phase 2"
 }
 
 L:SetOptionLocalization{
 	WarnPhase2Soon				= "Show pre-warning for Phase 2 (at ~83%)",
 	WarnPhase3Soon				= "Show pre-warning for Phase 3 (at ~38%)",
-	SpecWarnMalleableGoo		= "Show special warning if you are first $spell:72295 target",
-	SpecWarnMalleableGooNear	= "Show special warning if you are near first $spell:72295 target",
+	WarnUnstableExperimentG		= "Show warning for Unstable Experiment green add",
+	WarnUnstableExperimentO		= "Show warning for Unstable Experiment orange add",
 	WarnMutatedPlague			= DBM_CORE_AUTO_ANNOUNCE_OPTIONS.spell:format(72451, GetSpellInfo(72451) or "unknown"),
 	OozeAdhesiveIcon			= DBM_CORE_AUTO_ICONS_OPTION_TEXT:format(70447),
 	GaseousBloatIcon			= DBM_CORE_AUTO_ICONS_OPTION_TEXT:format(70672),
 	UnboundPlagueIcon			= DBM_CORE_AUTO_ICONS_OPTION_TEXT:format(72856),
-	MalleableGooIcon			= "Set icon on first $spell:72295 target",
 	NextUnboundPlagueTargetIcon	= "Set icon on next $spell:72856 target",
 	YellOnMalleableGoo			= "Yell on $spell:72295",
 	YellOnUnbound				= "Yell on $spell:72856",
-	GooArrow					= "Show DBM arrow when $spell:72295 is near you",
 	SpecWarnUnboundPlague		= "Show special warning for $spell:72856 transfer",
 	SpecWarnNextPlageSelf		= "Show special warning when you are the next $spell:72856 target",
-	BypassLatencyCheck			= "Don't use latency based sync check for $spell:72295\n(only use this if you're having problems otherwise)"
+	WarnUnboundPlageSoon		= "Show warning for 10 sec. to Unbound Plague",
+	SoundWarnMalleableGoo		= "Play sound on Malleable Goo cast"
 }
 
 L:SetMiscLocalization{
 	YellPull		= "Good news, everyone! I think I've perfected a plague that will destroy all life on Azeroth!",
-	YellMalleable	= "Malleable Goo on me!",
-	YellUnbound		= "Unbound Plague on me!"
+	YellUnbound		= "Unbound Plague on me!",
+	YellUnbound10s	= "Plague 10s take it off me!",
+	YellPhaseChangeHC	= "Two oozes, one room! So many delightful possibilities...",
+	YellMalleableGoo = "Malleable Goo!"
 }
 
 ----------------------------
@@ -347,18 +358,24 @@ L:SetGeneralLocalization{
 L:SetWarningLocalization{
 	WarnTargetSwitch		= "Switch target to: %s",
 	WarnTargetSwitchSoon	= "Target switch soon",
+	WarnDarkNucleus			= "New Dark Nucleus spawned",
+	WarnKineticBomb			= "New Kinetic Bomb spawned",
 	SpecWarnVortex			= "Shock Vortex on you - Move away",
 	SpecWarnVortexNear		= "Shock Vortex near you - Watch out"
 }
 
 L:SetTimerLocalization{
-	TimerTargetSwitch		= "Target switch"
+	TimerTargetSwitch		= "Target switch",
+	TimerDarkNucleus		= "Dark Nucleus CD"
 }
 
 L:SetOptionLocalization{
 	WarnTargetSwitch		= "Show warning to switch targets",-- Warn when another Prince needs to be damaged
 	WarnTargetSwitchSoon	= "Show pre-warning to switch targets",-- Every ~47 secs, you have to dps a different Prince
+	WarnDarkNucleus			= "Show warning for new Dark Nucleus spawn",
+	WarnKineticBomb			= "Show warning for new Kinetic Bomb spawn",
 	TimerTargetSwitch		= "Show timer for target switch cooldown",
+	TimerDarkNucleus		= "Show timer for Dark Nucleus cooldown",
 	SpecWarnVortex			= "Show special warning for $spell:72037 on you",
 	SpecWarnVortexNear		= "Show special warning for $spell:72037 near you",
 	EmpoweredFlameIcon		= DBM_CORE_AUTO_ICONS_OPTION_TEXT:format(72040),
@@ -369,10 +386,12 @@ L:SetOptionLocalization{
 }
 
 L:SetMiscLocalization{
+	YellPull			= "Naxxanar was merely a setback! With the power of the orb, Valanar will have his vengeance!",
 	Keleseth			= "Prince Keleseth",
 	Taldaram			= "Prince Taldaram",
 	Valanar				= "Prince Valanar",
-	EmpoweredFlames		= "Empowered Flames speed toward (%S+)!"
+	--EmpoweredFlames		= "Empowered Flames speed toward (%S+)!"
+	EmpoweredFlames		= "Inferno Flames speed toward (%S+)!"
 }
 
 -----------------------------
@@ -414,7 +433,8 @@ L:SetGeneralLocalization{
 
 L:SetWarningLocalization{
 	WarnCorrosion	= "%s on >%s< (%d)",		-- Corrosion on >args.destName< (args.amount)
-	WarnPortalOpen	= "Portals open"
+	WarnPortalOpen	= "Portals open",
+	WarnBlazingSkeleton = "Blazing Skeleton spawned"
 }
 
 L:SetTimerLocalization{
@@ -483,7 +503,7 @@ L:SetOptionLocalization{
 L:SetMiscLocalization{
 	YellAirphase		= "Your incursion ends here! None shall survive!",
 	YellAirphaseDem		= "Rikk zilthuras rikk zila Aman adare tiriosh ",--Demonic, since curse of tonges is used by some guilds and it messes up yell detection.
-	YellPhase2			= "Now, feel my master's limitless power and despair!",
+	YellPhase2			= "Now feel my master's limitless power and despair!",
 	YellPhase2Dem		= "Zar kiel xi romathIs zilthuras revos ruk toralar ",--Demonic, since curse of tonges is used by some guilds and it messes up yell detection.
 	BeaconIconSet		= "Frost Beacon icon {rt%d} set on %s",
 	AchievementWarning	= "Warning: %s has 5 stacks of Mystic Buffet",
@@ -553,6 +573,7 @@ L:SetOptionLocalization{
 
 L:SetMiscLocalization{
 	LKPull					= "So the Light's vaunted justice has finally arrived? Shall I lay down Frostmourne and throw myself at your mercy, Fordring?",
+	LKCombatStart			= "I'll keep you alive to witness the end, Fordring. I would not want the Light's greatest champion to miss seeing this wretched world remade in my image.",
 	YellDefile				= "Defile on me!",
 	YellTrap				= "Shadow Trap on me!",
 	YellValk				= "I've been grabbed!",

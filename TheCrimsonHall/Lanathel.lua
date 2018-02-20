@@ -1,3 +1,5 @@
+-- 2018-02-16 00:07:48
+-- test timerow po lotnej
 local mod	= DBM:NewMod("Lanathel", "DBM-Icecrown", 3)
 local L		= mod:GetLocalizedStrings()
 
@@ -35,14 +37,20 @@ local specWarnMindConrolled			= mod:NewSpecialWarningTarget(70923, mod:IsTank())
 
 local timerNextInciteTerror			= mod:NewNextTimer(100, 73070)
 local timerFirstBite				= mod:NewCastTimer(15, 71727)
-local timerNextPactDarkfallen		= mod:NewNextTimer(30.5, 71340)
-local timerNextSwarmingShadows		= mod:NewNextTimer(30.5, 71266)
+local timerNextPactDarkfallen		= mod:NewNextTimer(30, 71340)
+local timerNextSwarmingShadows		= mod:NewNextTimer(30, 71266)
 local timerInciteTerror				= mod:NewBuffActiveTimer(4, 73070)
 local timerBloodBolt				= mod:NewBuffActiveTimer(6, 71772)
 local timerBloodThirst				= mod:NewBuffActiveTimer(10, 71474)
 local timerEssenceoftheBloodQueen	= mod:NewBuffActiveTimer(60, 71473)
+--local timerDeliriousSlashCD			= mod:NewCDTimer(20, 71624, nil, mod:IsTank() or mod:IsHealer()) -- 10-12s / 20-24s
+local timerDeliriousSlashCD			= mod:NewCDTimer(20, 71624) -- 10-12s / 20-24s
+-- EVENT_BLOOD_MIRROR
+-- EVENT_DELIRIOUS_SLASH
+-- EVENT_TWILIGHT_BLOODBOLT
 
-local berserkTimer					= mod:NewBerserkTimer(320)
+
+local berserkTimer					= mod:NewBerserkTimer(330)
 
 local soundSwarmingShadows			= mod:NewSound(71266)
 
@@ -65,8 +73,9 @@ end
 function mod:OnCombatStart(delay)
 	berserkTimer:Start(-delay)
 	timerFirstBite:Start(-delay)
-	timerNextPactDarkfallen:Start(15-delay)
+	timerNextPactDarkfallen:Start(20-delay)
 	timerNextSwarmingShadows:Start(-delay)
+	timerDeliriousSlashCD:Start(10-delay)
 	table.wipe(pactTargets)
 	pactIcons = 6
 	if self.Options.RangeFrame then
@@ -167,6 +176,8 @@ function mod:SPELL_CAST_SUCCESS(args)
 		else
 			timerNextInciteTerror:Start()--100 seconds in between first and second on 25 man
 		end
+	elseif args:IsSpellID(71624, 71623, 71625, 71626) then
+		timerDeliriousSlashCD:Start()
 	end
 end
 

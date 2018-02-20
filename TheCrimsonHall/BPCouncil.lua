@@ -1,3 +1,4 @@
+-- 2018-02-18 02:30:41
 local mod	= DBM:NewMod("BPCouncil", "DBM-Icecrown", 3)
 local L		= mod:GetLocalizedStrings()
 
@@ -11,7 +12,7 @@ mod:SetBossHealthInfo(
 	37973, L.Taldaram
 )
 
-mod:RegisterCombat("combat")
+mod:RegisterCombat("yell", L.YellPull)
 
 mod:RegisterEvents(
 	"SPELL_CAST_START",
@@ -29,10 +30,10 @@ local warnConjureFlames			= mod:NewCastAnnounce(71718, 2)
 local warnEmpoweredFlamesCast	= mod:NewCastAnnounce(72040, 3)
 local warnEmpoweredFlames		= mod:NewTargetAnnounce(72040, 4)
 local warnGliteringSparks		= mod:NewTargetAnnounce(72798, 2)
-local warnShockVortex			= mod:NewTargetAnnounce(72037, 3)				-- 1,5sec cast
-local warnEmpoweredShockVortex	= mod:NewCastAnnounce(72039, 4)					-- 4,5sec cast
-local warnKineticBomb			= mod:NewSpellAnnounce(72053, 3, nil, mod:IsRanged())
-local warnDarkNucleus			= mod:NewSpellAnnounce(71943, 1, nil, false)	-- instant cast
+local warnShockVortex			= mod:NewTargetAnnounce(72037, 3)
+local warnEmpoweredShockVortex	= mod:NewCastAnnounce(72039, 4)
+local warnKineticBomb			= mod:NewAnnounce("WarnKineticBomb", 3, 72053, mod:IsRanged())
+local warnDarkNucleus			= mod:NewAnnounce("WarnDarkNucleus", 1, 71943, mod:IsTank())
 
 local specWarnVortex			= mod:NewSpecialWarning("SpecWarnVortex")
 local specWarnVortexNear		= mod:NewSpecialWarning("SpecWarnVortexNear")
@@ -40,13 +41,15 @@ local specWarnEmpoweredShockV	= mod:NewSpecialWarningRun(72039)
 local specWarnEmpoweredFlames	= mod:NewSpecialWarningRun(72040)
 local specWarnShadowPrison		= mod:NewSpecialWarningStack(72999, nil, 6)
 
-local timerTargetSwitch			= mod:NewTimer(47, "TimerTargetSwitch", 70952)	-- every 46-47seconds
-local timerDarkNucleusCD		= mod:NewCDTimer(10, 71943, nil, false)	-- usually every 10 seconds but sometimes more
-local timerConjureFlamesCD		= mod:NewCDTimer(20, 71718)				-- every 20-30 seconds but never more often than every 20sec
-local timerGlitteringSparksCD	= mod:NewCDTimer(20, 72798)				-- This is pretty nasty on heroic
-local timerShockVortex			= mod:NewCDTimer(16.5, 72037)			-- Seen a range from 16,8 - 21,6
-local timerKineticBombCD		= mod:NewCDTimer(18, 72053, nil, mod:IsRanged())				-- Might need tweaking
-local timerShadowPrison			= mod:NewBuffActiveTimer(10, 72999)		-- Hard mode debuff
+local timerTargetSwitch			= mod:NewTimer(46, "TimerTargetSwitch", 70952) 					-- 45s / 46s
+local timerDarkNucleusCD		= mod:NewTimer(10, "TimerDarkNucleus", 71943, mod:IsTank())		-- 10-15s / 10-15s
+local timerConjureFlamesCD		= mod:NewCDTimer(20, 71718)										-- 20s / 15s (empowered), 20-25s (not empowered)
+local timerNextConjureFlames	= mod:NewNextTimer(15, 71718)
+local timerGlitteringSparksCD	= mod:NewCDTimer(15, 72798)										-- 12-15s / 15-25s
+local timerShockVortex			= mod:NewCDTimer(18, 72037)										-- 15-20s / 30s (empowered), 18-23s (not empowered)
+local timerKineticBombCD		= mod:NewCDTimer(18, 72053, nil, mod:IsRanged())				-- 18-24s / 20.5s (25 man), 30.5 (10man)
+local timerNextKineticBomb		= mod:NewNextTimer(20.5, 72053, nil, mod:IsRanged())			-- 18-24s / 20.5s (25 man), 30.5 (10man)
+local timerShadowPrison			= mod:NewBuffActiveTimer(10, 72999)								-- Hard mode debuff
 
 local berserkTimer				= mod:NewBerserkTimer(600)
 
@@ -66,10 +69,15 @@ local function warnGlitteringSparksTargets()
 	timerGlitteringSparksCD:Start()
 end
 
-function mod:OnCombatStart(delay)
+function mod:OnCombatStart(delay) -- Prince Valanar active
 	berserkTimer:Start(-delay)
-	warnTargetSwitchSoon:Schedule(42-delay)
-	timerTargetSwitch:Start(-delay)
+	warnTargetSwitchSoon:Schedule(40-delay)
+	timerTargetSwitch:Start(45-delay)
+	timerDarkNucleusCD:Start(-delay)
+	timerNextConjureFlames:Start(20-delay)
+	timerGlitteringSparksCD:Start(12-delay)
+	timerShockVortex:Start(15-delay)
+	timerKineticBombCD:Start(-delay)
 	activePrince = nil
 	table.wipe(glitteringSparksTargets)
 	if self.Options.RangeFrame then
@@ -142,23 +150,23 @@ function mod:SPELL_CAST_START(args)
 		else
 			self:ScheduleMethod(0.1, "ShockVortexTarget")
 		end
-	elseif args:IsSpellID(72039, 73037, 73038, 73039) then	-- Empowered Shock Vortex(73037, 73038, 73039 drycoded from wowhead)
+	elseif args:IsSpellID(72039, 73037, 73038, 73039) then	-- Empowered Shock Vortex
 		warnEmpoweredShockVortex:Show()
 		specWarnEmpoweredShockV:Show()
-		timerShockVortex:Start()
+		timerShockVortex:Start(30)
 	elseif args:IsSpellID(71718) then	-- Conjure Flames
 		warnConjureFlames:Show()
 		timerConjureFlamesCD:Start()
 	elseif args:IsSpellID(72040) then	-- Conjure Empowered Flames
 		warnEmpoweredFlamesCast:Show()
-		timerConjureFlamesCD:Start()
+		timerNextConjureFlames:Start()
 	end
 end
 
 function mod:SPELL_AURA_APPLIED(args)
 	if args:IsSpellID(70952) and self:IsInCombat() then
 		warnTargetSwitch:Show(L.Valanar)
-		warnTargetSwitchSoon:Schedule(42)
+		warnTargetSwitchSoon:Schedule(41)
 		timerTargetSwitch:Start()
 		activePrince = args.destGUID
 		if self.Options.RangeFrame then
@@ -166,7 +174,7 @@ function mod:SPELL_AURA_APPLIED(args)
 		end
 	elseif args:IsSpellID(70981) and self:IsInCombat() then
 		warnTargetSwitch:Show(L.Keleseth)
-		warnTargetSwitchSoon:Schedule(42)
+		warnTargetSwitchSoon:Schedule(41)
 		timerTargetSwitch:Start()
 		activePrince = args.destGUID
 		if self.Options.RangeFrame then
@@ -174,7 +182,7 @@ function mod:SPELL_AURA_APPLIED(args)
 		end
 	elseif args:IsSpellID(70982) and self:IsInCombat() then
 		warnTargetSwitch:Show(L.Taldaram)
-		warnTargetSwitchSoon:Schedule(42)
+		warnTargetSwitchSoon:Schedule(41)
 		timerTargetSwitch:Start()
 		activePrince = args.destGUID
 		if self.Options.RangeFrame then
@@ -232,9 +240,9 @@ function mod:OnSync(msg, target)
 	if msg == "KineticBomb" then
 		warnKineticBomb:Show()
 		if mod:IsDifficulty("normal10") or mod:IsDifficulty("heroic10") then
-			timerKineticBombCD:Start(27)
+			timerNextKineticBomb:Start(30.5)
 		else
-			timerKineticBombCD:Start()
+			timerNextKineticBomb:Start(20.5)
 		end
 	elseif msg == "ShockVortex" then
 		if not self.Options.BypassLatencyCheck then
