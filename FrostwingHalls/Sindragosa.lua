@@ -19,6 +19,7 @@ mod:RegisterEvents(
 )
 
 local warnAirphase				= mod:NewAnnounce("WarnAirphase", 2, 43810)
+local warnAirphaseSoon			= mod:NewAnnounce("WarnAirphaseSoon", 2, 43810)
 local warnGroundphaseSoon		= mod:NewAnnounce("WarnGroundphaseSoon", 2, 43810)
 local warnPhase2soon			= mod:NewAnnounce("WarnPhase2soon", 1)
 local warnPhase2				= mod:NewPhaseAnnounce(2, 2)
@@ -67,6 +68,7 @@ local beaconTargets		= {}
 local beaconIconTargets	= {}
 local unchainedTargets	= {}
 local warned_P2 = false
+local firstairphasewarn = false
 local warnedfailed = false
 local phase = 0
 local unchainedIcons = 7
@@ -108,13 +110,14 @@ end
 
 function mod:OnCombatStart(delay)
 	berserkTimer:Start(-delay)
-	timerNextAirphase:Start(50-delay)
+	--timerNextAirphase:Start(50-delay)
 	timerNextBlisteringCold:Start(33.5-delay)
 	timerCleaveCD:Start(10-delay)
 	timerTailSmashCD:Start(20-delay)
 	timerFrostBreathCD:Start(8-delay)
 	timerUnchainedMagicCD:Start(9-delay)
 	warned_P2 = false
+	firstairphasewarn = false
 	warnedfailed = false
 	table.wipe(beaconTargets)
 	table.wipe(beaconIconTargets)
@@ -278,6 +281,10 @@ function mod:UNIT_HEALTH(uId)
 	if not warned_P2 and self:GetUnitCreatureId(uId) == 36853 and UnitHealth(uId) / UnitHealthMax(uId) <= 0.38 then
 		warned_P2 = true
 		warnPhase2soon:Show()	
+	end
+	if not firstairphasewarn and self:GetUnitCreatureId(uId) == 36853 and UnitHealth(uId) / UnitHealthMax(uId) <= 0.88 then
+		firstairphasewarn = true
+		warnAirphaseSoon:Show()
 	end
 end
 

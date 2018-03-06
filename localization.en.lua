@@ -138,7 +138,8 @@ L:SetWarningLocalization{
 	WarnReanimating				= "Add reviving",			-- Reanimating an adherent or fanatic
 	WarnTouchInsignificance		= "%s on >%s< (%d)",		-- Touch of Insignificance on >args.destName< (args.amount)
 	WarnAddsSoon				= "New adds soon",
-	SpecWarnVengefulShade		= "Vengeful Shade attacking you - Run Away"--creatureid 38222
+	SpecWarnVengefulShade		= "Vengeful Shade attacking you - Run Away",--creatureid 38222
+	SpecWarnSummonSpirit		= "Spirits spawned"--creatureid 38222
 }
 
 L:SetOptionLocalization{
@@ -146,6 +147,7 @@ L:SetOptionLocalization{
 	WarnReanimating				= "Show warning when an add is being revived",	-- Reanimated Adherent/Fanatic spawning
 	TimerAdds					= "Show CD timer for new adds",
 	SpecWarnVengefulShade		= "Show special warning when you are attacked by Vengeful Shade",--creatureid 38222
+	SpecWarnSummonSpirit		= "Show special warning when spirits spawned",
 	ShieldHealthFrame			= "Show boss health with a health bar for $spell:70842",
 	WarnTouchInsignificance		= DBM_CORE_AUTO_ANNOUNCE_OPTIONS.spell:format(71204, GetSpellInfo(71204) or "unknown"),	
 	SetIconOnDominateMind		= DBM_CORE_AUTO_ICONS_OPTION_TEXT:format(71289),
@@ -161,7 +163,8 @@ L:SetMiscLocalization{
 	ShieldPercent			= "Mana Barrier",--Translate Spell id 70842
 	Fanatic1				= "Cult Fanatic",
 	Fanatic2				= "Deformed Fanatic",
-	Fanatic3				= "Reanimated Fanatic"
+	Fanatic3				= "Reanimated Fanatic",
+	YellSpiritHit			= "No! Patrz gdzie stalem..."
 }
 
 ----------------------
@@ -335,7 +338,9 @@ L:SetOptionLocalization{
 	SpecWarnUnboundPlague		= "Show special warning for $spell:72856 transfer",
 	SpecWarnNextPlageSelf		= "Show special warning when you are the next $spell:72856 target",
 	WarnUnboundPlageSoon		= "Show warning for 10 sec. to Unbound Plague",
-	SoundWarnMalleableGoo		= "Play sound on Malleable Goo cast"
+	SoundWarnMalleableGoo		= "Play sound on Malleable Goo cast",
+	SoundWarnFlasks				= "Play voice warning 10 sec. to Chocking Gas Bomb",
+	SoundPreWarnMalleable		= "Play voice warning 3 sec. to Malleable Goo"
 }
 
 L:SetMiscLocalization{
@@ -343,7 +348,8 @@ L:SetMiscLocalization{
 	YellUnbound		= "Unbound Plague on me!",
 	YellUnbound10s	= "Plague 10s take it off me!",
 	YellPhaseChangeHC	= "Two oozes, one room! So many delightful possibilities...",
-	YellMalleableGoo = "Malleable Goo!"
+	YellMalleableGoo = "Malleable Goo!",
+	YellKill = "Bad news, everyone! I don't think I'm going to make it."
 }
 
 ----------------------------
@@ -477,6 +483,7 @@ L:SetTimerLocalization{
 L:SetWarningLocalization{
 	WarnPhase2soon			= "Phase 2 soon",
 	WarnAirphase			= "Air phase",
+	WarnAirphaseSoon		= "Air phase soon (at 85%)",
 	WarnGroundphaseSoon		= "Sindragosa landing soon",
 	WarnInstability			= "Instability >%d<",
 	WarnChilledtotheBone	= "Chilled to the Bone >%d<",

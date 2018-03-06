@@ -57,6 +57,7 @@ function mod:OnCombatStart(delay)
 		self:ScheduleMethod(62, "Adds")
 		timerBelowZeroCD:Start(75-delay)--This doesn't make sense. Need more logs to verify
 	else
+		timerCombatStart:Start(45-delay)
 		if mod:IsDifficulty("heroic10") or mod:IsDifficulty("heroic25") then
 			timerAdds:Start(63-delay)
 			warnAddsSoon:Schedule(58)

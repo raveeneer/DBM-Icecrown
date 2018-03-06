@@ -1,5 +1,4 @@
 -- 2018-02-16 00:07:48
--- test timerow po lotnej
 local mod	= DBM:NewMod("Lanathel", "DBM-Icecrown", 3)
 local L		= mod:GetLocalizedStrings()
 
@@ -43,12 +42,8 @@ local timerInciteTerror				= mod:NewBuffActiveTimer(4, 73070)
 local timerBloodBolt				= mod:NewBuffActiveTimer(6, 71772)
 local timerBloodThirst				= mod:NewBuffActiveTimer(10, 71474)
 local timerEssenceoftheBloodQueen	= mod:NewBuffActiveTimer(60, 71473)
---local timerDeliriousSlashCD			= mod:NewCDTimer(20, 71624, nil, mod:IsTank() or mod:IsHealer()) -- 10-12s / 20-24s
-local timerDeliriousSlashCD			= mod:NewCDTimer(20, 71624) -- 10-12s / 20-24s
--- EVENT_BLOOD_MIRROR
--- EVENT_DELIRIOUS_SLASH
--- EVENT_TWILIGHT_BLOODBOLT
-
+local timerDeliriousSlashCD			= mod:NewCDTimer(20, 71624, nil, mod:IsTank() or mod:IsHealer()) -- 10-12s / 20-24s
+--local timerDeliriousSlashCD			= mod:NewCDTimer(20, 71624) -- 10-12s / 20-24s
 
 local berserkTimer					= mod:NewBerserkTimer(330)
 

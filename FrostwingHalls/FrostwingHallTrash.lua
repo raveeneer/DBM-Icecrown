@@ -1,4 +1,3 @@
--- check ids... 10hc ok, 10n ok, 
 local mod	= DBM:NewMod("FrostwingHallTrash", "DBM-Icecrown", 4)
 local L		= mod:GetLocalizedStrings()
 
@@ -46,9 +45,9 @@ function mod:SPELL_AURA_APPLIED(args)
 end
 
 function mod:SPELL_PERIODIC_DAMAGE(args)
-	if args:IsSpellID(71380) then
-		specWarnFrostPuddle:Show()
-	end
+	--if args:IsSpellID(71380) then
+		--specWarnFrostPuddle:Show()
+	--end
 end
 
 function mod:SPELL_CAST_START(args)

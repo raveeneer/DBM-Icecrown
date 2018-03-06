@@ -45,11 +45,12 @@ local specWarnVampricMight			= mod:NewSpecialWarningDispel(70674, canPurge)
 local specWarnDarkMartyrdom			= mod:NewSpecialWarningMove(72499, mod:IsMelee())
 local specWarnFrostbolt				= mod:NewSpecialWarningInterupt(72007, false)
 local specWarnVengefulShade			= mod:NewSpecialWarning("SpecWarnVengefulShade", not mod:IsTank())
+local specWarnSummonSpirit			= mod:NewSpecialWarning("SpecWarnSummonSpirit")
 
 local timerAdds						= mod:NewTimer(60, "TimerAdds", 61131) 	-- 5s / 45s hc, 60s norm
 local timerDominateMind				= mod:NewBuffActiveTimer(12, 71289)
 local timerDominateMindCD			= mod:NewCDTimer(40, 71289) 			-- 40-50s
-local timerSummonSpiritCD			= mod:NewCDTimer(12, 71426, nil, false) -- 12s
+local timerSummonSpiritCD			= mod:NewCDTimer(12, 71426, nil, true) -- 12s
 local timerFrostboltCast			= mod:NewCastTimer(2, 72007)
 local timerFrostboltVolleyCD		= mod:NewCDTimer(13, 70759) 			-- 19-20s / 13-15s
 local timerTouchInsignificance		= mod:NewTargetTimer(10, 71204, nil, mod:IsTank() or mod:IsHealer()) -- 6-9s / 9-13s
@@ -71,7 +72,6 @@ mod:AddBoolOption("PlaySoundBloopers", true)
 mod:RemoveOption("HealthFrame")
 
 
-local lastDD	= 0
 local dominateMindTargets	= {}
 local dominateMindIcon 	= 6
 local deformedFanatic
@@ -181,9 +181,8 @@ do
 			if args:IsPlayer() then
 				specWarnDeathDecay:Show()
 			end
-			if (GetTime() - lastDD > 5) then
+			if not timerDeathDecay:IsStarted() then
 				warnDeathDecay:Show()
-				lastDD = GetTime()
 				timerDeathDecay:Start()
 			end
 		elseif args:IsSpellID(71237) and args:IsPlayer() then
@@ -261,14 +260,11 @@ function mod:SPELL_INTERRUPT(args)
 	end
 end
 
-local lastSpirit = 0
 function mod:SPELL_SUMMON(args)
 	if args:IsSpellID(71426) then -- Summon Vengeful Shade
-		if time() - lastSpirit > 5 then
-			warnSummonSpirit:Show()
-			timerSummonSpiritCD:Start()
-			lastSpirit = time()
-		end
+		warnSummonSpirit:Show()
+		specWarnSummonSpirit:Show()
+		timerSummonSpiritCD:Start()
 		PlaySoundFile(soundSpirits, "Master")
 	end
 end
@@ -276,6 +272,7 @@ end
 function mod:SWING_DAMAGE(args)
 	if args:IsPlayer() and args:GetSrcCreatureID() == 38222 then
 		specWarnVengefulShade:Show()
+		SendChatMessage(L.YellSpiritHit, "SAY")
 	end
 end
 

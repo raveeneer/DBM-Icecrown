@@ -5,6 +5,7 @@ local L		= mod:GetLocalizedStrings()
 mod:SetRevision(("$Revision: 4408 $"):sub(12, -3))
 mod:SetCreatureID(36678)
 mod:RegisterCombat("yell", L.YellPull)
+mod:RegisterKill("yell", L.YellKill)
 mod:SetMinSyncRevision(3860)
 mod:SetUsedIcons(5, 6, 7, 8)
 
@@ -52,7 +53,8 @@ local timerGaseousBloat				= mod:NewTargetTimer(20, 70672)			-- Duration of debu
 local timerSlimePuddle				= mod:NewNextTimer(35, 70341)			-- 10s / 35s
 local timerUnstableExperimentCD		= mod:NewCDTimer(35, 70351)			    -- 30-35s / 35-40s
 local timerChokingGasBombCD			= mod:NewCDTimer(35, 71255)			    -- 35-40s / 35-40s
-local timerMalleableGooCD			= mod:NewCDTimer(25, 72295)				-- 25-30s
+--local timerMalleableGooCD			= mod:NewCDTimer(25, 72295)				-- 25-30s
+local timerMalleableGooCD			= mod:NewNextTimer(20, 72295) 			-- changed to stick 20s by Graal
 local timerMutatedPlagueCD			= mod:NewCDTimer(10, 72451)				-- 10 to 11
 local timerUnboundPlagueCD			= mod:NewNextTimer(90, 72856)			-- 20s / 90s
 local timerUnboundPlague			= mod:NewBuffActiveTimer(12, 72856)		-- Heroic Ability: we can't keep the debuff 60 seconds, so we have to switch at 12-15 seconds. Otherwise the debuff does to much damage!
@@ -64,6 +66,11 @@ local timerRegurgitatedOoze			= mod:NewTargetTimer(20, 70539)
 local berserkTimer					= mod:NewBerserkTimer(600)
 
 local soundGaseousBloat 			= mod:NewSound(72455)
+local sound1 = "Interface\\AddOns\\DBM-Core\\sounds\\1.mp3"
+local sound2 = "Interface\\AddOns\\DBM-Core\\sounds\\2.mp3"
+local sound3 = "Interface\\AddOns\\DBM-Core\\sounds\\3.mp3"
+local flasks = "Interface\\AddOns\\DBM-Core\\sounds\\flasks.mp3"
+local malleable = "Interface\\AddOns\\DBM-Core\\sounds\\malleable.mp3"
 
 mod:AddBoolOption("OozeAdhesiveIcon")
 mod:AddBoolOption("GaseousBloatIcon")
@@ -71,11 +78,21 @@ mod:AddBoolOption("UnboundPlagueIcon")					-- icon on the player with active buf
 mod:AddBoolOption("YellOnMalleableGoo", true, "announce")
 mod:AddBoolOption("YellOnUnbound", true, "announce")
 mod:AddBoolOption("SoundWarnMalleableGoo", true)
+mod:AddBoolOption("SoundPreWarnMalleable", mod:IsRanged())
+mod:AddBoolOption("SoundWarnFlasks", mod:IsTank() or mod:IsMelee())
 
 local warned_preP2 = false
 local warned_preP3 = false
 local phase = 0
 local unstable_experiment = 0
+
+function mod:Malleable5Sec()
+	PlaySoundFile(malleable, "Master")
+end
+
+function mod:Flasks10Sec()
+	PlaySoundFile(flasks, "Master")
+end
 
 function mod:OnCombatStart(delay)
 	berserkTimer:Start(-delay)
@@ -109,11 +126,25 @@ function mod:SPELL_CAST_START(args)
 		timerSlimePuddle:AddTime(24)
 		if phase == 2 then
 			timerUnstableExperimentCD:AddTime(24)
-		else
+			timerMalleableGooCD:Start(25)
+			if self.Options.SoundPreWarnMalleable then -- Malleable Goo voice pre-warning
+				self:Unschedule(Malleable5Sec)
+			end
+			if self.Options.SoundWarnFlasks then
+				self:Unschedule(Flasks10Sec)
+			end
+			timerChokingGasBombCD:Start(35)	
+		elseif phase == 3 then
 			timerUnstableExperimentCD:Cancel()
+			timerMalleableGooCD:AddTime(19) 		-- -5 due to 20s timer for MG on Phase 3
+			if self.Options.SoundPreWarnMalleable then -- Malleable Goo voice pre-warning
+				self:Unschedule(Malleable5Sec)
+			end
+			if self.Options.SoundWarnFlasks then
+				self:Unschedule(Flasks10Sec)
+			end
+			timerChokingGasBombCD:AddTime(24)	
 		end
-		timerMalleableGooCD:Start(25)
-		timerChokingGasBombCD:Start(35)	
 	end
 end
 
@@ -122,6 +153,9 @@ function mod:SPELL_CAST_SUCCESS(args)
 		warnChokingGasBomb:Show()
 		specWarnChokingGasBomb:Show()
 		timerChokingGasBombCD:Start()
+		if self.Options.SoundWarnFlasks then -- Chocking Gas Bomb 10 sec. to voice warning
+			self:ScheduleMethod(25, "Flasks10Sec")
+		end
 	elseif args:IsSpellID(72855, 72856, 72854, 70911) then 	-- Unbound Plague
 		warnUnboundPlagueSoon:Schedule(80)
 		timerUnboundPlagueCD:Start()
@@ -178,6 +212,7 @@ function mod:SPELL_AURA_APPLIED(args)
 			specWarnGasVariable:Show()
 		end
 	elseif args:IsSpellID(72855, 72854, 72856, 70911) then	 	-- Unbound Plague
+		
 		warnUnboundPlague:Show(args.destName)
 		if self.Options.UnboundPlagueIcon then
 			self:SetIcon(args.destName, 5, 20)
@@ -187,7 +222,7 @@ function mod:SPELL_AURA_APPLIED(args)
 			timerUnboundPlague:Start()
 			if self.Options.YellOnUnbound then
 				SendChatMessage(L.YellUnbound, "SAY")
-				self:ScheduleMethod(10, "UnboundPlaguePassOn")					
+				--self:ScheduleMethod(10, "UnboundPlaguePassOn")					
 			end
 		end
 	end
@@ -249,8 +284,11 @@ function mod:CHAT_MSG_RAID_BOSS_EMOTE(msg)
 		if self.Options.SoundWarnMalleableGoo then
 			PlaySoundFile("Interface\\AddOns\\DBM-Core\\sounds\\mirabelki.mp3", "Master")
 		end
+		if self.Options.SoundPreWarnMalleable then -- Malleable Goo voice pre-warning
+			self:ScheduleMethod(15, "Malleable5Sec")
+		end
 		warnMalleableGoo:Show()
-		specWarnMalleableGooCast:Show()
+		specWarnMalleableGooCast:Show()		
 		timerMalleableGooCD:Start()
 	end
 end
@@ -263,10 +301,21 @@ function mod:CHAT_MSG_MONSTER_YELL(msg)
 		else
 			timerUnstableExperimentCD:Cancel()
 		end
+		if self.Options.SoundPreWarnMalleable then -- Malleable Goo voice pre-warning
+			self:Unschedule(Malleable5Sec)
+		end
+		if self.Options.SoundWarnFlasks then
+			self:Unschedule(Flasks10Sec)
+		end
 		timerUnboundPlagueCD:AddTime(49)
 		timerSlimePuddle:AddTime(49)
-		timerChokingGasBombCD:Start(60)
-		timerMalleableGooCD:Start(50)
+		if phase == 2 then
+			timerChokingGasBombCD:Start(60)
+			timerMalleableGooCD:Start(50)
+		elseif phase == 3 then
+			timerChokingGasBombCD:AddTime(49)
+			timerMalleableGooCD:AddTime(49)
+		end
 		warnUnboundPlagueSoon:Cancel()
 	end
 end

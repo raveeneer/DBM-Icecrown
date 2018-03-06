@@ -1,5 +1,4 @@
 -- 2018-02-09 13:46:35
--- id goo sprawdzone tylko na 25hc
 local mod	= DBM:NewMod("Festergut", "DBM-Icecrown", 2)
 local L		= mod:GetLocalizedStrings()
 
@@ -161,7 +160,7 @@ function mod:SPELL_CAST_START(args)
 end
 
 function mod:SPELL_DAMAGE(args)
-	if args:IsSpellID(72550) and args:IsDestTypePlayer() then   -- Malleable Goo
+	if args:IsSpellID(72550, 72297, 72548, 72549) and args:IsDestTypePlayer() then   -- Malleable Goo
         malleableGooTargets[#malleableGooTargets + 1] = args.destName
         if args:IsPlayer() then
             specWarnMalleableGoo:Show()
@@ -174,7 +173,12 @@ end
 
 function mod:SPELL_AURA_APPLIED(args)
 	if args:IsSpellID(69279) then	-- Gas Spore
-		timerVileGasCD:Start(20)
+		if timerVileGasCD:IsStarted() and (timerVileGasCD:GetTime() + 20) > timerVileGasCD:Time() then
+			timerVileGasCD:Start(20)
+		elseif not timerVileGasCD:IsStarted() then
+			timerVileGasCD:Start(20)
+		end
+		--timerVileGasCD:Start(20)
 		gasSporeTargets[#gasSporeTargets + 1] = args.destName
 		gasSporeCast = gasSporeCast + 1
 		if (gasSporeCast < 9 and (mod:IsDifficulty("normal25") or mod:IsDifficulty("heroic25"))) or (gasSporeCast < 6 and (mod:IsDifficulty("normal10") or mod:IsDifficulty("heroic10"))) then

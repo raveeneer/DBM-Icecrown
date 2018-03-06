@@ -1,11 +1,10 @@
---2018-02-09 13:46:21
+-- 2018-02-09 13:46:21
 local mod	= DBM:NewMod("Rotface", "DBM-Icecrown", 2)
 local L		= mod:GetLocalizedStrings()
 
 mod:SetRevision(("$Revision: 4408 $"):sub(12, -3))
 mod:SetCreatureID(36627)
 mod:SetUsedIcons(7, 8)
---mod:RegisterCombat("combat")
 mod:RegisterCombat("yell", L.YellPull)
 
 mod:RegisterEvents(
@@ -37,7 +36,7 @@ local specWarnRadiatingOoze		= mod:NewSpecialWarningSpell(69760, not mod:IsTank(
 local specWarnLittleOoze		= mod:NewSpecialWarning("SpecWarnLittleOoze")
 local specWarnVileGas			= mod:NewSpecialWarningYou(72272)
 
-local timerStickyOoze			= mod:NewNextTimer(20, 69774, nil, mod:IsTank())
+local timerStickyOoze			= mod:NewNextTimer(15, 69774, nil, mod:IsTank())
 local timerWallSlime			= mod:NewTimer(25, "NextPoisonSlimePipes", 69789) -- 8s / 25s
 local timerSlimeSpray			= mod:NewNextTimer(20, 69508) -- 20s / 20s -- delay events 1s
 local timerMutatedInfectionTar	= mod:NewTargetTimer(12, 71224)
@@ -57,7 +56,6 @@ local mutatedInfection = 14
 local function warnRFVileGasTargets()
 	warnVileGas:Show(table.concat(RFVileGasTargets, "<, >"))
 	table.wipe(RFVileGasTargets)
-	timerVileGasCD:Start()
 end
 
 function mod:hastenInfection()
@@ -117,7 +115,7 @@ function mod:SPELL_CAST_START(args)
 end
 
 function mod:SPELL_AURA_APPLIED(args)
-	if args:IsPlayer() and args:IsSpellID(71208) then
+	if args:IsPlayer() and args:IsSpellID(71208, 69778) then
 		specWarnStickyOoze:Show()
 	elseif args:IsSpellID(69760) then
 		warnRadiatingOoze:Show()
@@ -139,11 +137,12 @@ function mod:SPELL_AURA_APPLIED(args)
 				InfectionIcon = 8
 			end
 		end
-	elseif args:IsSpellID(72272, 72273) and args:IsDestTypePlayer() then	-- Vile Gas(Heroic Rotface only, 25 man spellid the same as 10?)
+	elseif args:IsSpellID(72272, 72273, 69240, 71218, 73019, 73020) and args:IsDestTypePlayer() then	-- Vile Gas(Heroic Rotface only, 25 man spellid the same as 10?)
 		RFVileGasTargets[#RFVileGasTargets + 1] = args.destName
 		if args:IsPlayer() then
 			specWarnVileGas:Show()
 		end
+		timerVileGasCD:Start()
 		self:Unschedule(warnRFVileGasTargets)
 		self:Schedule(2.5, warnRFVileGasTargets) -- Yes it does take this long to travel to all 3 targets sometimes, qq.
 	end
@@ -153,7 +152,7 @@ mod.SPELL_AURA_APPLIED_DOSE = mod.SPELL_AURA_APPLIED
 
 function mod:SPELL_CAST_SUCCESS(args)
 	if args:IsSpellID(72272, 72273) then
-		timerVileGasCD:Start()
+		--timerVileGasCD:Start()
 	end
 end
 
